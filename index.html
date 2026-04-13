@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Stok Omaji - Glass Edition</title>
+    <title>Sistem Stok Omaji - Live Sync</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
@@ -67,9 +67,28 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.5);
             text-align: center;
             font-size: 22px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
         }
 
-        /* Wrapper Kategori dan Tanggal Cek */
+        /* Lampu Indikator Live */
+        .live-indicator {
+            width: 10px;
+            height: 10px;
+            background-color: var(--danger);
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
+
         .header-controls {
             display: flex;
             gap: 10px;
@@ -112,7 +131,6 @@
             font-weight: 500;
         }
 
-        /* Stock List */
         .stock-list {
             display: flex;
             flex-direction: column;
@@ -183,11 +201,11 @@
         .edit-btn:hover { color: var(--edit); background: white; transform: scale(1.05); }
         .delete-btn:hover { color: var(--danger); background: white; transform: scale(1.05); }
 
-        /* Unified Footer Bar - REVISI ROUNDED */
+        /* Unified Footer Bar Rounded */
         .unified-footer {
             display: flex;
             width: 100%;
-            border-radius: 40px; /* Diperbesar agar sangat melengkung seperti pil */
+            border-radius: 40px; 
             overflow: hidden;
             border: 1px solid rgba(255,255,255,0.7);
             box-shadow: 0 8px 30px rgba(0,0,0,0.08);
@@ -290,12 +308,15 @@
             border: 1px solid rgba(255,255,255,0.4);
         }
         .empty-text { color: var(--text-muted); font-style: italic; font-size: 12px; padding: 4px 0; }
+
+        /* Status Loading */
+        #loading { text-align: center; font-weight: 600; color: var(--text-muted); padding: 20px; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <div class="container glass">
-        <h2>✨ Stok Omaji</h2>
+        <h2><span class="live-indicator" title="Live Sync Active"></span> Stok Omaji Live</h2>
 
         <div class="header-controls">
             <select id="categoryFilter" onchange="setFilter(this.value)">
@@ -311,8 +332,8 @@
             <input type="date" id="globalReportDate" title="Tanggal Cek Stok">
         </div>
 
-        <div class="stock-list" id="stockList">
-            </div>
+        <div id="loading">Memuat data dari server...</div>
+        <div class="stock-list" id="stockList" style="display:none;"></div>
 
         <div class="unified-footer">
             <button class="unified-btn btn-recap" onclick="showRecap()">
@@ -362,8 +383,36 @@
         </div>
     </div>
 
-    <script>
-        // Set Default Global Date Hari Ini
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Konfigurasi dari Firebase milikmu (sudah disesuaikan)
+        const firebaseConfig = {
+            apiKey: "AIzaSyACEjzDR7PyWXnflqtkkPeY5BGYRiwBHUk",
+            authDomain: "stok-omaji.firebaseapp.com",
+            // Tambahan URL Database agar Realtime Database berfungsi (Server Singapore/Asia Tenggara)
+            databaseURL: "https://stok-omaji-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "stok-omaji",
+            storageBucket: "stok-omaji.firebasestorage.app",
+            messagingSenderId: "969026737214",
+            appId: "1:969026737214:web:86cd42b70b5a9647f96d6f",
+            measurementId: "G-EDK59K760N"
+        };
+
+        // Inisialisasi Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const dbRef = ref(db, 'stokOmajiData'); 
+
+        let inventory = [];
+        let currentFilter = 'Semua';
+        let editIndex = -1;
+
+        const stockList = document.getElementById('stockList');
+        const loadingDiv = document.getElementById('loading');
+
+        // Mengatur Tanggal Hari Ini secara Default
         function getTodayYMD() {
             const d = new Date();
             const yyyy = d.getFullYear();
@@ -373,42 +422,44 @@
         }
         document.getElementById('globalReportDate').value = getTodayYMD();
 
+        // Data awal (jika database masih kosong sepenuhnya)
         const defaultIngredients = [
             { name: "Nasi Putih", category: "Bahan Makanan", status: "Aman" },
             { name: "Mie Telur / Instan", category: "Bahan Makanan", status: "Aman" },
             { name: "Kentang Beku", category: "Snack", status: "Aman" },
-            { name: "Dimsum Beku", category: "Snack", status: "Aman" },
             { name: "Sosis", category: "Snack", status: "Aman" },
             { name: "Kecap Manis", category: "Bumbu/Saus", status: "Aman" },
-            { name: "Saus Sambal", category: "Bumbu/Saus", status: "Aman" },
             { name: "Minyak Goreng", category: "Bumbu/Saus", status: "Aman" },
-            { name: "Tepung Bumbu", category: "Bumbu/Saus", status: "Aman" },
             { name: "Susu Kental Manis", category: "Bahan Minuman", status: "Aman" },
-            { name: "Kopi Hitam Bubuk", category: "Bahan Minuman", status: "Aman" },
-            { name: "Sirup (Soda Gembira)", category: "Bahan Minuman", status: "Aman" },
-            { name: "Es Batu", category: "Lainnya", status: "Aman" },
-            { name: "Gas LPG", category: "Lainnya", status: "Aman" }
+            { name: "Kopi Hitam Bubuk", category: "Bahan Minuman", status: "Aman" }
         ];
 
-        let inventory = JSON.parse(localStorage.getItem('stokOmajiGlassV4'));
-        if (!inventory || inventory.length === 0) {
-            inventory = defaultIngredients;
-            saveToLocalStorage();
+        // Listener Data Realtime dari Server
+        onValue(dbRef, (snapshot) => {
+            loadingDiv.style.display = 'none';
+            stockList.style.display = 'flex';
+            
+            const data = snapshot.val();
+            if (data) {
+                inventory = data;
+            } else {
+                // Jika server benar-benar kosong, masukkan data default
+                inventory = defaultIngredients;
+                saveToFirebase(); // Langsung simpan data awal ke server
+            }
+            renderInventory();
+        }, (error) => {
+            // Jika koneksi URL database gagal, coba fallback ke server pusat (US)
+            if(error.message.includes("databaseURL")) {
+                alert("Koneksi Database bermasalah. Pastikan kamu sudah menekan tombol 'Enable' di menu Realtime Database Firebase ya!");
+            }
+        });
+
+        function saveToFirebase() {
+            set(dbRef, inventory).catch((error) => alert("Gagal menyimpan: " + error.message));
         }
 
-        let currentFilter = 'Semua';
-        let editIndex = -1; 
-
-        const formModal = document.getElementById('formModal');
-        const stockForm = document.getElementById('stockForm');
-        const formModalTitle = document.getElementById('formModalTitle');
-        const stockList = document.getElementById('stockList');
-        const categoryFilterDropdown = document.getElementById('categoryFilter');
-
-        function saveToLocalStorage() {
-            localStorage.setItem('stokOmajiGlassV4', JSON.stringify(inventory));
-        }
-
+        // --- FUNGSI UI (Didaftarkan ke window) ---
         window.setFilter = function(category) {
             currentFilter = category;
             renderInventory();
@@ -436,7 +487,6 @@
 
                 const card = document.createElement('div');
                 card.className = cardClass;
-
                 card.innerHTML = `
                     <div class="item-info">
                         <span class="item-name">${item.name}</span>
@@ -444,10 +494,10 @@
                     </div>
                     <div class="item-controls">
                         <button class="${btnClass}" onclick="cycleStatus(${index})">${btnText}</button>
-                        <button class="icon-btn edit-btn" onclick="editItem(${index})" title="Edit Item">
+                        <button class="icon-btn edit-btn" onclick="editItem(${index})">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         </button>
-                        <button class="icon-btn delete-btn" onclick="deleteItem(${index})" title="Hapus Item">
+                        <button class="icon-btn delete-btn" onclick="deleteItem(${index})">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                         </button>
                     </div>
@@ -456,29 +506,28 @@
             });
 
             if (displayedCount === 0) {
-                stockList.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding: 20px; font-weight:500;">Kategori "${currentFilter}" kosong.</div>`;
+                stockList.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding: 20px; font-weight:500;">Tidak ada data.</div>`;
             }
         }
 
         window.openAddModal = function() {
             editIndex = -1;
-            stockForm.reset();
-            formModalTitle.innerText = "Tambah Bahan";
-            formModal.style.display = "flex";
-            document.getElementById('itemName').focus();
+            document.getElementById('stockForm').reset();
+            document.getElementById('formModalTitle').innerText = "Tambah Bahan";
+            document.getElementById('formModal').style.display = "flex";
         }
 
         window.editItem = function(index) {
             editIndex = index;
             document.getElementById('itemName').value = inventory[index].name;
             document.getElementById('itemCategory').value = inventory[index].category;
-            formModalTitle.innerText = "Edit Bahan";
-            formModal.style.display = "flex";
+            document.getElementById('formModalTitle').innerText = "Edit Bahan";
+            document.getElementById('formModal').style.display = "flex";
         }
 
-        window.closeFormModal = function() { formModal.style.display = "none"; }
+        window.closeFormModal = function() { document.getElementById('formModal').style.display = "none"; }
 
-        stockForm.addEventListener('submit', function(e) {
+        document.getElementById('stockForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const name = document.getElementById('itemName').value;
             const category = document.getElementById('itemCategory').value;
@@ -488,108 +537,60 @@
                 inventory[editIndex].category = category;
             } else {
                 inventory.unshift({ name, category, status: 'Aman' });
-                categoryFilterDropdown.value = 'Semua';
-                setFilter('Semua'); 
             }
 
-            saveToLocalStorage();
-            renderInventory();
-            closeFormModal();
+            saveToFirebase(); 
+            window.closeFormModal();
         });
 
         window.cycleStatus = function(index) {
             const current = inventory[index].status;
             inventory[index].status = current === 'Aman' ? 'Hampir Habis' : current === 'Hampir Habis' ? 'Habis' : 'Aman';
-            saveToLocalStorage();
-            renderInventory();
+            saveToFirebase(); 
         }
 
         window.deleteItem = function(index) {
-            if (confirm(`Hapus ${inventory[index].name} dari daftar?`)) {
+            if (confirm(`Hapus ${inventory[index].name}?`)) {
                 inventory.splice(index, 1);
-                saveToLocalStorage();
-                renderInventory();
+                saveToFirebase(); 
             }
         }
 
-        const recapModal = document.getElementById('recapModal');
-        
         window.showRecap = function() {
             const habis = inventory.filter(i => i.status === 'Habis');
             const hampir = inventory.filter(i => i.status === 'Hampir Habis');
-            
-            const recapBody = document.getElementById('recapBody');
             let html = '';
 
-            html += `
-            <div class="recap-section">
-                <div class="recap-title" style="color: var(--danger)">
-                    <span>🔴 Habis (Urgent)</span><span>${habis.length} item</span>
-                </div>
-                ${habis.length > 0 
-                    ? `<ul class="recap-list">${habis.map(i => `<li><span>${i.name}</span></li>`).join('')}</ul>` 
-                    : `<div class="empty-text">Aman, tidak ada yang habis.</div>`
-                }
-            </div>`;
+            html += `<div class="recap-section"><div class="recap-title" style="color: var(--danger)"><span>🔴 Habis (Urgent)</span><span>${habis.length} item</span></div>`;
+            html += habis.length > 0 ? `<ul class="recap-list">${habis.map(i => `<li><span>${i.name}</span></li>`).join('')}</ul>` : `<div class="empty-text">Aman, tidak ada yang habis.</div>`;
+            html += `</div><div class="recap-section"><div class="recap-title" style="color: var(--warning)"><span>⚠️ Hampir Habis</span><span>${hampir.length} item</span></div>`;
+            html += hampir.length > 0 ? `<ul class="recap-list">${hampir.map(i => `<li><span>${i.name}</span></li>`).join('')}</ul>` : `<div class="empty-text">Kosong.</div></div>`;
 
-            html += `
-            <div class="recap-section">
-                <div class="recap-title" style="color: var(--warning)">
-                    <span>⚠️ Hampir Habis</span><span>${hampir.length} item</span>
-                </div>
-                ${hampir.length > 0 
-                    ? `<ul class="recap-list">${hampir.map(i => `<li><span>${i.name}</span></li>`).join('')}</ul>` 
-                    : `<div class="empty-text">Kosong.</div>`
-                }
-            </div>`;
-
-            recapBody.innerHTML = html;
-            recapModal.style.display = 'flex';
+            document.getElementById('recapBody').innerHTML = html;
+            document.getElementById('recapModal').style.display = 'flex';
         }
 
-        window.closeRecap = function() { recapModal.style.display = 'none'; }
-
+        window.closeRecap = function() { document.getElementById('recapModal').style.display = 'none'; }
+        
         window.onclick = function(event) {
-            if (event.target == recapModal) recapModal.style.display = "none";
-            if (event.target == formModal) formModal.style.display = "none";
+            if (event.target == document.getElementById('recapModal')) window.closeRecap();
+            if (event.target == document.getElementById('formModal')) window.closeFormModal();
         }
 
         window.sendReportToBoss = function() {
             const habis = inventory.filter(i => i.status === 'Habis');
             const hampir = inventory.filter(i => i.status === 'Hampir Habis');
-            
-            if (habis.length === 0 && hampir.length === 0) {
-                alert('Semua bahan baku masih aman, tidak ada yang perlu dilaporkan.');
-                return;
-            }
+            if (habis.length === 0 && hampir.length === 0) { alert('Semua bahan baku masih aman.'); return; }
 
-            // Ambil input tanggal global yang dipilih pengguna
-            const selectedDateValue = document.getElementById('globalReportDate').value;
-            const dateObj = new Date(selectedDateValue);
+            const dateObj = new Date(document.getElementById('globalReportDate').value);
+            const formattedDate = !isNaN(dateObj) ? dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : "";
             
-            // Format agar cantik: 13 April 2026
-            const optionsDate = { day: 'numeric', month: 'long', year: 'numeric' };
-            const formattedDate = !isNaN(dateObj) ? dateObj.toLocaleDateString('id-ID', optionsDate) : selectedDateValue;
-
             let text = `Halo, izin melaporkan update kondisi bahan baku Omaji.\n📅 *Tanggal Cek:* ${formattedDate}\n\n`;
-
-            if (habis.length > 0) {
-                text += `🚨 *SUDAH HABIS:*\n`;
-                habis.forEach(item => text += `- ${item.name}\n`);
-                text += `\n`;
-            }
-
-            if (hampir.length > 0) {
-                text += `⚠️ *HAMPIR HABIS:*\n`;
-                hampir.forEach(item => text += `- ${item.name}\n`);
-                text += `\n`;
-            }
-
+            if (habis.length > 0) { text += `🚨 *SUDAH HABIS:*\n` + habis.map(i => `- ${i.name}\n`).join('') + `\n`; }
+            if (hampir.length > 0) { text += `⚠️ *HAMPIR HABIS:*\n` + hampir.map(i => `- ${i.name}\n`).join('') + `\n`; }
             text += `Mohon arahannya untuk proses belanja/restock. Terima kasih! 🙏`;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
-
-        renderInventory();
     </script>
 </body>
 </html>
