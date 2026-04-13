@@ -2,365 +2,578 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Stok Omaji - Live Sync</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Stok Omaji</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --text-main: #2c3e50;
-            --text-muted: #576574;
-            --accent: #2e4c30; 
-            --accent-hover: #1e3320;
-            
-            --safe: #27ae60;
-            --warning: #f39c12;
-            --danger: #e74c3c;
-            --edit: #2980b9;
+            --green-dark: #1a3d1c;
+            --green-mid: #2e6b31;
+            --green-light: #e8f5e9;
+            --green-accent: #43a047;
+
+            --safe: #2e7d32;
+            --safe-bg: #e8f5e9;
+            --safe-border: #a5d6a7;
+
+            --warn: #e65100;
+            --warn-bg: #fff3e0;
+            --warn-border: #ffcc80;
+
+            --danger: #c62828;
+            --danger-bg: #ffebee;
+            --danger-border: #ef9a9a;
+
+            --bg: #f0f4f0;
+            --surface: #ffffff;
+            --surface2: #f7faf7;
+            --border: #e0e8e0;
+            --text: #1a2a1a;
+            --muted: #6b7f6b;
+            --radius: 16px;
+            --radius-sm: 10px;
+            --shadow: 0 2px 12px rgba(30,60,30,0.08);
+            --shadow-md: 0 4px 24px rgba(30,60,30,0.12);
         }
 
         body {
-            font-family: 'Poppins', sans-serif;
-            margin: 0;
-            padding: 20px 15px; 
-            min-height: 100vh;
-            color: var(--text-main);
-            background: linear-gradient(-45deg, #e0eafc, #cfdef3, #d4fc79, #c8e6c9);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-            display: flex;
-            justify-content: center;
-            box-sizing: border-box;
-        }
-
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        .glass {
-            background: rgba(255, 255, 255, 0.45);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-        }
-
-        .container {
-            width: 100%;
-            max-width: 600px;
-            padding: 25px;
-            border-radius: 28px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
-            height: fit-content;
-            position: relative;
+            overflow-x: hidden;
         }
 
-        h2 {
-            margin-top: 0;
-            font-weight: 700;
-            color: var(--text-main);
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
-            text-align: center;
-            font-size: 22px;
+        /* ── HEADER ── */
+        .app-header {
+            background: var(--green-dark);
+            padding: 16px 20px 14px;
             display: flex;
-            justify-content: center;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 10px; }
+
+        .logo-mark {
+            width: 36px; height: 36px;
+            background: var(--green-accent);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 700; color: #fff;
+            letter-spacing: -1px;
+        }
+
+        .app-title { color: #fff; font-size: 16px; font-weight: 700; line-height: 1.1; }
+        .app-sub { color: rgba(255,255,255,0.55); font-size: 11px; font-weight: 500; }
+
+        .live-pill {
+            display: flex; align-items: center; gap: 5px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 20px;
+            padding: 5px 10px;
+            font-size: 11px; color: rgba(255,255,255,0.85); font-weight: 600;
+        }
+
+        .live-dot {
+            width: 7px; height: 7px;
+            background: #69f0ae;
+            border-radius: 50%;
+            animation: blink 1.4s ease infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.7); }
+        }
+
+        /* ── FILTER BAR ── */
+        .filter-bar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 16px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .filter-bar::-webkit-scrollbar { display: none; }
+
+        .filter-chip {
+            flex-shrink: 0;
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1.5px solid var(--border);
+            background: transparent;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .filter-chip.active {
+            background: var(--green-dark);
+            border-color: var(--green-dark);
+            color: #fff;
+        }
+
+        /* ── DATE ROW ── */
+        .date-row {
+            padding: 10px 16px;
+            display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        /* Lampu Indikator Live */
-        .live-indicator {
-            width: 10px;
-            height: 10px;
-            background-color: var(--danger);
-            border-radius: 50%;
-            display: inline-block;
-            animation: pulse 1.5s infinite;
+        .date-row label {
+            font-size: 12px; color: var(--muted); font-weight: 600; white-space: nowrap;
         }
 
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
-        }
-
-        .header-controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .header-controls select, .header-controls input[type="date"] {
+        .date-row input[type="date"] {
             flex: 1;
-            padding: 12px 14px;
-            border-radius: 16px;
-            background: rgba(255, 255, 255, 0.35);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            color: var(--text-main);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
             font-family: inherit;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
+            color: var(--text);
+            padding: 8px 12px;
             outline: none;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
-            transition: all 0.3s ease;
+            transition: border-color 0.2s;
         }
 
-        .header-controls select {
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232c3e50' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            background-size: 16px;
+        .date-row input[type="date"]:focus {
+            border-color: var(--green-mid);
         }
 
-        .header-controls select:focus, .header-controls input[type="date"]:focus,
-        .header-controls select:hover, .header-controls input[type="date"]:hover {
-            background-color: rgba(255, 255, 255, 0.6);
-            border-color: var(--accent);
+        /* ── STATS ROW ── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            padding: 0 16px 12px;
         }
 
-        .header-controls select option {
-            background: #ffffff;
-            color: var(--text-main);
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            text-align: center;
+        }
+
+        .stat-num { font-size: 22px; font-weight: 700; line-height: 1; }
+        .stat-lbl { font-size: 10px; font-weight: 600; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px; }
+
+        .stat-card.aman .stat-num { color: var(--safe); }
+        .stat-card.warn .stat-num { color: var(--warn); }
+        .stat-card.hbs .stat-num { color: var(--danger); }
+
+        /* ── STOCK LIST ── */
+        .stock-list {
+            flex: 1;
+            padding: 0 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-bottom: 100px;
+        }
+
+        #loading {
+            text-align: center;
+            padding: 48px 16px;
+            color: var(--muted);
+            font-size: 14px;
             font-weight: 500;
         }
 
-        .stock-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 25px;
-            max-height: 55vh;
-            overflow-y: auto;
-            padding-right: 5px;
-            padding-left: 2px;
+        .spinner {
+            width: 28px; height: 28px;
+            border: 3px solid var(--border);
+            border-top-color: var(--green-mid);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
         }
 
-        .stock-list::-webkit-scrollbar { width: 6px; }
-        .stock-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         .item-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 13px 14px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 14px 18px;
-            border-radius: 18px;
-            transition: all 0.3s ease;
-            border-left: 6px solid var(--safe);
+            gap: 12px;
+            transition: transform 0.15s, box-shadow 0.15s;
+            position: relative;
+            overflow: hidden;
         }
 
-        .item-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        .item-card::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            background: var(--safe-border);
+            border-radius: 4px 0 0 4px;
         }
 
-        .item-card.warning-stock {
-            border-left-color: var(--warning);
-            background: rgba(243, 156, 18, 0.1);
+        .item-card.warning-stock { background: var(--warn-bg); border-color: var(--warn-border); }
+        .item-card.warning-stock::before { background: var(--warn); }
+        .item-card.danger-stock { background: var(--danger-bg); border-color: var(--danger-border); }
+        .item-card.danger-stock::before { background: var(--danger); }
+
+        .item-card:active { transform: scale(0.99); }
+
+        .item-icon {
+            width: 38px; height: 38px; flex-shrink: 0;
+            border-radius: 10px;
+            background: var(--green-light);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 17px;
         }
 
-        .item-card.danger-stock {
-            border-left-color: var(--danger);
-            background: rgba(231, 76, 60, 0.1);
-        }
+        .item-card.warning-stock .item-icon { background: var(--warn-bg); }
+        .item-card.danger-stock .item-icon { background: var(--danger-bg); }
 
-        .item-info { display: flex; flex-direction: column; gap: 4px; }
-        .item-name { font-weight: 600; font-size: 14px; letter-spacing: 0.3px; }
-        
+        .item-info { flex: 1; min-width: 0; }
+        .item-name {
+            font-size: 14px; font-weight: 600;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
         .item-category {
-            font-size: 10px; color: var(--text-muted); text-transform: uppercase;
-            letter-spacing: 0.5px; font-weight: 600; background: rgba(0,0,0,0.05);
-            padding: 3px 6px; border-radius: 6px; width: fit-content;
+            font-size: 11px; color: var(--muted); font-weight: 500; margin-top: 2px;
         }
 
-        .item-controls { display: flex; align-items: center; gap: 6px; }
+        .item-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
         .status-btn {
-            padding: 8px 12px; font-size: 11px; border-radius: 20px; font-weight: 600;
-            min-width: 90px; text-align: center; border: none; cursor: pointer;
-            margin-right: 2px; transition: all 0.2s; font-family: inherit;
+            font-family: inherit;
+            font-size: 11px; font-weight: 700;
+            padding: 5px 10px;
+            border-radius: 20px;
+            border: 1.5px solid;
+            cursor: pointer;
+            transition: all 0.18s;
+            white-space: nowrap;
+            min-width: 80px;
+            text-align: center;
         }
 
-        .status-btn.aman { background-color: rgba(39, 174, 96, 0.15); color: var(--safe); border: 1px solid rgba(39, 174, 96, 0.3); }
-        .status-btn.hampir { background-color: var(--warning); color: white; box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3); }
-        .status-btn.habis { background-color: var(--danger); color: white; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3); }
+        .status-btn.aman {
+            background: var(--safe-bg); color: var(--safe); border-color: var(--safe-border);
+        }
+        .status-btn.hampir {
+            background: var(--warn-bg); color: var(--warn); border-color: var(--warn-border);
+        }
+        .status-btn.habis {
+            background: var(--danger-bg); color: var(--danger); border-color: var(--danger-border);
+        }
 
         .icon-btn {
-            background: rgba(255,255,255,0.4); color: var(--text-muted);
-            width: 32px; height: 32px; border-radius: 10px; display: flex; 
-            align-items: center; justify-content: center; padding: 0; 
-            border: 1px solid rgba(255,255,255,0.6); cursor: pointer; transition: all 0.2s ease;
-        }
-
-        .edit-btn:hover { color: var(--edit); background: white; transform: scale(1.05); }
-        .delete-btn:hover { color: var(--danger); background: white; transform: scale(1.05); }
-
-        /* Unified Footer Bar Rounded */
-        .unified-footer {
-            display: flex;
-            width: 100%;
-            border-radius: 40px; 
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.7);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
-            background: rgba(255, 255, 255, 0.2);
-            margin-top: auto;
-        }
-
-        .unified-btn {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            padding: 12px 5px;
-            font-size: 11px;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-family: inherit;
-            color: var(--text-main);
-            background: transparent;
-        }
-
-        .unified-btn svg { width: 20px; height: 20px; }
-
-        .btn-recap { background: rgba(255, 255, 255, 0.6); border-right: 1px solid rgba(255,255,255,0.4); }
-        .btn-recap:hover { background: rgba(255, 255, 255, 0.9); }
-
-        .btn-add { 
-            background: linear-gradient(135deg, var(--accent), #4a7c49); 
-            color: white; 
-            flex: 0.9; 
-        }
-        .btn-add svg { width: 28px; height: 28px; margin-bottom: 0; }
-        .btn-add:hover { background: var(--accent-hover); }
-
-        .btn-wa { background: rgba(37, 211, 102, 0.2); color: #128C7E; border-left: 1px solid rgba(255,255,255,0.4); }
-        .btn-wa:hover { background: #25D366; color: white; }
-
-        /* Modals */
-        .modal {
-            display: none; position: fixed; z-index: 999;
-            left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.2);
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-            align-items: center; justify-content: center;
-            padding: 20px; box-sizing: border-box;
-            opacity: 0; animation: fadeIn 0.3s forwards;
-        }
-
-        @keyframes fadeIn { to { opacity: 1; } }
-
-        .modal-content {
-            padding: 25px; border-radius: 28px; width: 100%; max-width: 400px;
-            max-height: 85vh; overflow-y: auto; position: relative;
-        }
-
-        .close-modal {
-            position: absolute; right: 20px; top: 20px;
-            color: var(--text-muted); font-size: 20px;
-            font-weight: bold; cursor: pointer; width: 28px; height: 28px;
+            width: 30px; height: 30px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface2);
             display: flex; align-items: center; justify-content: center;
-            background: rgba(255,255,255,0.5); border-radius: 50%; transition: all 0.2s;
-        }
-        .close-modal:hover { background: var(--danger); color: white; }
-
-        .modal-form { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
-        
-        .input-label {
-            font-size: 12px; font-weight: 600; color: var(--text-main);
-            margin-bottom: -6px; padding-left: 5px;
+            cursor: pointer;
+            color: var(--muted);
+            transition: all 0.18s;
+            flex-shrink: 0;
         }
 
-        .modal-form input, .modal-form select {
-            padding: 14px; border-radius: 14px;
-            border: 1px solid rgba(255,255,255,0.8); background: rgba(255,255,255,0.6);
-            font-family: inherit; font-size: 13px; outline: none; transition: all 0.3s;
+        .icon-btn:active { transform: scale(0.92); }
+        .edit-btn:active { color: #1565c0; border-color: #90caf9; background: #e3f2fd; }
+        .delete-btn:active { color: var(--danger); border-color: var(--danger-border); background: var(--danger-bg); }
+
+        /* ── FAB ── */
+        .fab {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 54px; height: 54px;
+            background: var(--green-dark);
+            color: #fff;
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 6px 20px rgba(26,61,28,0.35);
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 26px; font-weight: 300;
+            transition: all 0.2s;
+            z-index: 50;
         }
-        .modal-form input:focus, .modal-form select:focus {
-            background: white; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(46,76,48,0.1);
+
+        .fab:active { transform: scale(0.93); }
+
+        /* ── BOTTOM NAV ── */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            z-index: 60;
+            padding-bottom: env(safe-area-inset-bottom);
         }
+
+        .nav-btn {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 3px;
+            padding: 10px 8px;
+            border: none; background: transparent;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 11px; font-weight: 600;
+            color: var(--muted);
+            transition: color 0.2s;
+        }
+
+        .nav-btn svg { width: 20px; height: 20px; }
+        .nav-btn:active { color: var(--green-mid); }
+
+        .nav-btn.wa { color: #1b7a3f; }
+        .nav-btn.wa:active { color: #0a4f27; }
+
+        /* ── MODALS ── */
+        .modal-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(10,30,10,0.45);
+            z-index: 200;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .modal-overlay.open { display: flex; animation: fadeOverlay 0.2s ease; }
+        @keyframes fadeOverlay { from { opacity: 0; } to { opacity: 1; } }
+
+        .modal-sheet {
+            background: var(--surface);
+            border-radius: 24px 24px 0 0;
+            width: 100%;
+            max-width: 480px;
+            max-height: 92dvh;
+            overflow-y: auto;
+            padding: 20px 20px 28px;
+            animation: slideUp 0.25s cubic-bezier(0.34,1.1,0.64,1);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(40px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .sheet-handle {
+            width: 36px; height: 4px;
+            background: var(--border);
+            border-radius: 4px;
+            margin: 0 auto 18px;
+        }
+
+        .sheet-title {
+            font-size: 17px; font-weight: 700;
+            margin-bottom: 18px; color: var(--text);
+        }
+
+        .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+
+        .form-label {
+            font-size: 12px; font-weight: 600; color: var(--muted);
+            text-transform: uppercase; letter-spacing: 0.4px; padding-left: 2px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 13px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--text);
+            background: var(--surface2);
+            outline: none;
+            transition: border-color 0.2s, background 0.2s;
+            appearance: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--green-mid);
+            background: var(--surface);
+            box-shadow: 0 0 0 3px rgba(46,107,49,0.1);
+        }
+
         .submit-btn {
-            background: var(--accent); color: white;
-            padding: 14px; border-radius: 14px; border: none;
-            font-weight: 600; font-size: 14px; cursor: pointer;
-            margin-top: 10px; transition: all 0.2s; font-family: inherit;
+            width: 100%;
+            padding: 14px;
+            background: var(--green-dark);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 15px; font-weight: 700;
+            cursor: pointer;
+            margin-top: 6px;
+            transition: all 0.2s;
+            letter-spacing: 0.2px;
         }
-        .submit-btn:hover { background: var(--accent-hover); }
 
+        .submit-btn:active { transform: scale(0.98); background: var(--green-mid); }
+
+        /* ── RECAP MODAL ── */
         .recap-section { margin-bottom: 20px; }
-        .recap-title { font-weight: 600; font-size: 13px; margin-bottom: 10px; display: flex; justify-content: space-between; }
-        .recap-list { list-style-type: none; padding: 0; margin: 0; font-size: 12px; }
-        .recap-list li {
-            padding: 10px 15px; background: rgba(255,255,255,0.5);
-            margin-bottom: 6px; border-radius: 12px;
-            display: flex; justify-content: space-between;
-            border: 1px solid rgba(255,255,255,0.4);
-        }
-        .empty-text { color: var(--text-muted); font-style: italic; font-size: 12px; padding: 4px 0; }
 
-        /* Status Loading */
-        #loading { text-align: center; font-weight: 600; color: var(--text-muted); padding: 20px; font-size: 14px; }
+        .recap-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .recap-badge {
+            font-size: 11px; font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+
+        .recap-badge.danger { background: var(--danger-bg); color: var(--danger); }
+        .recap-badge.warn { background: var(--warn-bg); color: var(--warn); }
+        .recap-badge.safe { background: var(--safe-bg); color: var(--safe); }
+
+        .recap-label {
+            font-size: 13px; font-weight: 700; color: var(--text);
+        }
+
+        .recap-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            margin-bottom: 6px;
+            font-size: 13px; font-weight: 500;
+        }
+
+        .recap-item-dot {
+            width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+        }
+
+        .empty-note {
+            font-size: 12px; color: var(--muted); font-style: italic; padding: 4px 2px;
+        }
+
+        .empty-state {
+            text-align: center; padding: 40px 16px; color: var(--muted);
+            font-size: 14px; font-weight: 500;
+        }
+
+        /* Category emoji map handled in JS */
     </style>
 </head>
 <body>
 
-    <div class="container glass">
-        <h2><span class="live-indicator" title="Live Sync Active"></span> Stok Omaji Live</h2>
-
-        <div class="header-controls">
-            <select id="categoryFilter" onchange="setFilter(this.value)">
-                <option value="Semua">Semua Kategori</option>
-                <option value="Bahan Makanan">Bahan Makanan</option>
-                <option value="Bahan Minuman">Bahan Minuman</option>
-                <option value="Snack">Snack</option>
-                <option value="Buah-buahan">Buah-buahan</option>
-                <option value="Bumbu/Saus">Bumbu & Saus</option>
-                <option value="Lainnya">Lainnya</option>
-            </select>
-            
-            <input type="date" id="globalReportDate" title="Tanggal Cek Stok">
+    <!-- HEADER -->
+    <header class="app-header">
+        <div class="header-left">
+            <div class="logo-mark">O</div>
+            <div>
+                <div class="app-title">Stok Omaji</div>
+                <div class="app-sub">Manajemen Bahan Baku</div>
+            </div>
         </div>
+        <div class="live-pill">
+            <span class="live-dot"></span>
+            LIVE
+        </div>
+    </header>
 
-        <div id="loading">Memuat data dari server...</div>
-        <div class="stock-list" id="stockList" style="display:none;"></div>
+    <!-- FILTER CHIPS -->
+    <div class="filter-bar" id="filterBar">
+        <button class="filter-chip active" data-cat="Semua" onclick="setFilter('Semua', this)">Semua</button>
+        <button class="filter-chip" data-cat="Bahan Makanan" onclick="setFilter('Bahan Makanan', this)">🍱 Makanan</button>
+        <button class="filter-chip" data-cat="Bahan Minuman" onclick="setFilter('Bahan Minuman', this)">🧃 Minuman</button>
+        <button class="filter-chip" data-cat="Snack" onclick="setFilter('Snack', this)">🍟 Snack</button>
+        <button class="filter-chip" data-cat="Buah-buahan" onclick="setFilter('Buah-buahan', this)">🍓 Buah</button>
+        <button class="filter-chip" data-cat="Bumbu/Saus" onclick="setFilter('Bumbu/Saus', this)">🧂 Bumbu</button>
+        <button class="filter-chip" data-cat="Lainnya" onclick="setFilter('Lainnya', this)">📦 Lainnya</button>
+    </div>
 
-        <div class="unified-footer">
-            <button class="unified-btn btn-recap" onclick="showRecap()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                <span>Rekap</span>
-            </button>
-            <button class="unified-btn btn-add" onclick="openAddModal()" title="Tambah Bahan">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            </button>
-            <button class="unified-btn btn-wa" onclick="sendReportToBoss()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-                <span>Kirim WA</span>
-            </button>
+    <!-- DATE ROW -->
+    <div class="date-row">
+        <label for="globalReportDate">📅 Tanggal Cek</label>
+        <input type="date" id="globalReportDate">
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row" id="statsRow" style="display:none;">
+        <div class="stat-card aman">
+            <div class="stat-num" id="statAman">0</div>
+            <div class="stat-lbl">Aman</div>
+        </div>
+        <div class="stat-card warn">
+            <div class="stat-num" id="statWarn">0</div>
+            <div class="stat-lbl">Hampir Habis</div>
+        </div>
+        <div class="stat-card hbs">
+            <div class="stat-num" id="statHabis">0</div>
+            <div class="stat-lbl">Habis</div>
         </div>
     </div>
 
-    <div id="formModal" class="modal">
-        <div class="modal-content glass">
-            <span class="close-modal" onclick="closeFormModal()">&times;</span>
-            <h3 id="formModalTitle" style="margin-top:0; font-size:18px;">Tambah Bahan</h3>
-            
-            <form id="stockForm" class="modal-form">
-                <label class="input-label">Nama Bahan</label>
-                <input type="text" id="itemName" placeholder="Contoh: Gula Pasir" required>
-                
-                <label class="input-label">Kategori</label>
-                <select id="itemCategory" required>
+    <!-- LOADING -->
+    <div id="loading">
+        <div class="spinner"></div>
+        Menghubungkan ke server...
+    </div>
+
+    <!-- STOCK LIST -->
+    <div class="stock-list" id="stockList" style="display:none;"></div>
+
+    <!-- FAB -->
+    <button class="fab" onclick="openAddModal()" title="Tambah Bahan">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+
+    <!-- BOTTOM NAV -->
+    <nav class="bottom-nav">
+        <button class="nav-btn" onclick="showRecap()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Rekap Stok
+        </button>
+        <button class="nav-btn wa" onclick="sendReportToBoss()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            Kirim ke WA
+        </button>
+    </nav>
+
+    <!-- FORM MODAL -->
+    <div id="formModal" class="modal-overlay" onclick="handleOverlayClick(event, 'formModal')">
+        <div class="modal-sheet">
+            <div class="sheet-handle"></div>
+            <div class="sheet-title" id="formModalTitle">Tambah Bahan</div>
+            <div class="form-group">
+                <label class="form-label">Nama Bahan</label>
+                <input class="form-input" type="text" id="itemName" placeholder="Contoh: Gula Pasir">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Kategori</label>
+                <select class="form-input" id="itemCategory">
                     <option value="" disabled selected>Pilih Kategori</option>
                     <option value="Bahan Makanan">Bahan Makanan</option>
                     <option value="Bahan Minuman">Bahan Minuman</option>
@@ -369,16 +582,16 @@
                     <option value="Bumbu/Saus">Bumbu & Saus</option>
                     <option value="Lainnya">Lainnya</option>
                 </select>
-
-                <button type="submit" class="submit-btn" id="submitBtn">Simpan Bahan</button>
-            </form>
+            </div>
+            <button class="submit-btn" id="submitBtn" onclick="submitForm()">Simpan Bahan</button>
         </div>
     </div>
 
-    <div id="recapModal" class="modal">
-        <div class="modal-content glass">
-            <span class="close-modal" onclick="closeRecap()">&times;</span>
-            <h3 style="margin-top:0; font-size:18px;">📊 Rekap Stok</h3>
+    <!-- RECAP MODAL -->
+    <div id="recapModal" class="modal-overlay" onclick="handleOverlayClick(event, 'recapModal')">
+        <div class="modal-sheet">
+            <div class="sheet-handle"></div>
+            <div class="sheet-title">📊 Rekap Stok</div>
             <div id="recapBody"></div>
         </div>
     </div>
@@ -387,42 +600,33 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // Konfigurasi dari Firebase milikmu (sudah disesuaikan)
         const firebaseConfig = {
             apiKey: "AIzaSyACEjzDR7PyWXnflqtkkPeY5BGYRiwBHUk",
             authDomain: "stok-omaji.firebaseapp.com",
-            // Tambahan URL Database agar Realtime Database berfungsi (Server Singapore/Asia Tenggara)
             databaseURL: "https://stok-omaji-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "stok-omaji",
             storageBucket: "stok-omaji.firebasestorage.app",
             messagingSenderId: "969026737214",
-            appId: "1:969026737214:web:86cd42b70b5a9647f96d6f",
-            measurementId: "G-EDK59K760N"
+            appId: "1:969026737214:web:86cd42b70b5a9647f96d6f"
         };
 
-        // Inisialisasi Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        const dbRef = ref(db, 'stokOmajiData'); 
+        const dbRef = ref(db, 'stokOmajiData');
 
         let inventory = [];
         let currentFilter = 'Semua';
         let editIndex = -1;
 
-        const stockList = document.getElementById('stockList');
-        const loadingDiv = document.getElementById('loading');
+        const EMOJI = {
+            "Bahan Makanan": "🍱",
+            "Bahan Minuman": "🧃",
+            "Snack": "🍟",
+            "Buah-buahan": "🍓",
+            "Bumbu/Saus": "🧂",
+            "Lainnya": "📦"
+        };
 
-        // Mengatur Tanggal Hari Ini secara Default
-        function getTodayYMD() {
-            const d = new Date();
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const dd = String(d.getDate()).padStart(2, '0');
-            return `${yyyy}-${mm}-${dd}`;
-        }
-        document.getElementById('globalReportDate').value = getTodayYMD();
-
-        // Data awal (jika database masih kosong sepenuhnya)
         const defaultIngredients = [
             { name: "Nasi Putih", category: "Bahan Makanan", status: "Aman" },
             { name: "Mie Telur / Instan", category: "Bahan Makanan", status: "Aman" },
@@ -434,163 +638,192 @@
             { name: "Kopi Hitam Bubuk", category: "Bahan Minuman", status: "Aman" }
         ];
 
-        // Listener Data Realtime dari Server
+        function getTodayYMD() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+        document.getElementById('globalReportDate').value = getTodayYMD();
+
         onValue(dbRef, (snapshot) => {
-            loadingDiv.style.display = 'none';
-            stockList.style.display = 'flex';
-            
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('stockList').style.display = 'flex';
+            document.getElementById('statsRow').style.display = 'grid';
             const data = snapshot.val();
-            if (data) {
-                inventory = data;
-            } else {
-                // Jika server benar-benar kosong, masukkan data default
-                inventory = defaultIngredients;
-                saveToFirebase(); // Langsung simpan data awal ke server
-            }
+            inventory = data || defaultIngredients;
+            if (!data) saveToFirebase();
             renderInventory();
-        }, (error) => {
-            // Jika koneksi URL database gagal, coba fallback ke server pusat (US)
-            if(error.message.includes("databaseURL")) {
-                alert("Koneksi Database bermasalah. Pastikan kamu sudah menekan tombol 'Enable' di menu Realtime Database Firebase ya!");
-            }
+        }, () => {
+            document.getElementById('loading').innerHTML = '⚠️ Gagal terhubung ke server.';
         });
 
         function saveToFirebase() {
-            set(dbRef, inventory).catch((error) => alert("Gagal menyimpan: " + error.message));
-        }
-
-        // --- FUNGSI UI (Didaftarkan ke window) ---
-        window.setFilter = function(category) {
-            currentFilter = category;
-            renderInventory();
+            set(dbRef, inventory).catch(e => alert("Gagal menyimpan: " + e.message));
         }
 
         function renderInventory() {
-            stockList.innerHTML = '';
-            let displayedCount = 0;
+            const list = document.getElementById('stockList');
+            list.innerHTML = '';
 
-            inventory.forEach((item, index) => {
-                if (currentFilter !== 'Semua' && item.category !== currentFilter) return; 
-                displayedCount++;
+            const filtered = inventory.filter((item, i) => {
+                item._origIndex = i;
+                return currentFilter === 'Semua' || item.category === currentFilter;
+            });
 
-                let cardClass = 'item-card glass'; 
+            let aman = 0, warn = 0, habis = 0;
+            inventory.forEach(i => {
+                if (i.status === 'Aman') aman++;
+                else if (i.status === 'Hampir Habis') warn++;
+                else habis++;
+            });
+            document.getElementById('statAman').textContent = aman;
+            document.getElementById('statWarn').textContent = warn;
+            document.getElementById('statHabis').textContent = habis;
+
+            if (filtered.length === 0) {
+                list.innerHTML = `<div class="empty-state">Tidak ada bahan di kategori ini.</div>`;
+                return;
+            }
+
+            filtered.forEach((item) => {
+                const idx = item._origIndex;
+                let cardClass = 'item-card';
                 let btnClass = 'status-btn';
                 let btnText = 'Aman';
-
                 if (item.status === 'Hampir Habis') {
-                    cardClass += ' warning-stock'; btnClass += ' hampir'; btnText = 'Hampir Habis';
+                    cardClass += ' warning-stock'; btnClass += ' hampir'; btnText = '⚠️ Hampir Habis';
                 } else if (item.status === 'Habis') {
-                    cardClass += ' danger-stock'; btnClass += ' habis'; btnText = 'Habis';
+                    cardClass += ' danger-stock'; btnClass += ' habis'; btnText = '🔴 Habis';
                 } else {
-                    btnClass += ' aman';
+                    btnClass += ' aman'; btnText = '✅ Aman';
                 }
 
                 const card = document.createElement('div');
                 card.className = cardClass;
                 card.innerHTML = `
+                    <div class="item-icon">${EMOJI[item.category] || '📦'}</div>
                     <div class="item-info">
-                        <span class="item-name">${item.name}</span>
-                        <span class="item-category">${item.category}</span>
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-category">${item.category}</div>
                     </div>
-                    <div class="item-controls">
-                        <button class="${btnClass}" onclick="cycleStatus(${index})">${btnText}</button>
-                        <button class="icon-btn edit-btn" onclick="editItem(${index})">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    <div class="item-right">
+                        <button class="${btnClass}" onclick="cycleStatus(${idx})">${btnText}</button>
+                        <button class="icon-btn edit-btn" onclick="editItem(${idx})">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
-                        <button class="icon-btn delete-btn" onclick="deleteItem(${index})">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        <button class="icon-btn delete-btn" onclick="deleteItem(${idx})">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                         </button>
                     </div>
                 `;
-                stockList.appendChild(card);
+                list.appendChild(card);
             });
-
-            if (displayedCount === 0) {
-                stockList.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding: 20px; font-weight:500;">Tidak ada data.</div>`;
-            }
         }
+
+        window.setFilter = function(cat, el) {
+            currentFilter = cat;
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            renderInventory();
+        };
 
         window.openAddModal = function() {
             editIndex = -1;
-            document.getElementById('stockForm').reset();
-            document.getElementById('formModalTitle').innerText = "Tambah Bahan";
-            document.getElementById('formModal').style.display = "flex";
-        }
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemCategory').value = '';
+            document.getElementById('formModalTitle').textContent = 'Tambah Bahan';
+            document.getElementById('submitBtn').textContent = 'Simpan Bahan';
+            document.getElementById('formModal').classList.add('open');
+        };
 
-        window.editItem = function(index) {
-            editIndex = index;
-            document.getElementById('itemName').value = inventory[index].name;
-            document.getElementById('itemCategory').value = inventory[index].category;
-            document.getElementById('formModalTitle').innerText = "Edit Bahan";
-            document.getElementById('formModal').style.display = "flex";
-        }
+        window.editItem = function(idx) {
+            editIndex = idx;
+            document.getElementById('itemName').value = inventory[idx].name;
+            document.getElementById('itemCategory').value = inventory[idx].category;
+            document.getElementById('formModalTitle').textContent = 'Edit Bahan';
+            document.getElementById('submitBtn').textContent = 'Perbarui Bahan';
+            document.getElementById('formModal').classList.add('open');
+        };
 
-        window.closeFormModal = function() { document.getElementById('formModal').style.display = "none"; }
-
-        document.getElementById('stockForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const name = document.getElementById('itemName').value;
+        window.submitForm = function() {
+            const name = document.getElementById('itemName').value.trim();
             const category = document.getElementById('itemCategory').value;
-
+            if (!name || !category) { alert('Lengkapi semua kolom ya!'); return; }
             if (editIndex >= 0) {
                 inventory[editIndex].name = name;
                 inventory[editIndex].category = category;
             } else {
                 inventory.unshift({ name, category, status: 'Aman' });
             }
+            saveToFirebase();
+            document.getElementById('formModal').classList.remove('open');
+        };
 
-            saveToFirebase(); 
-            window.closeFormModal();
-        });
+        window.cycleStatus = function(idx) {
+            const s = inventory[idx].status;
+            inventory[idx].status = s === 'Aman' ? 'Hampir Habis' : s === 'Hampir Habis' ? 'Habis' : 'Aman';
+            saveToFirebase();
+        };
 
-        window.cycleStatus = function(index) {
-            const current = inventory[index].status;
-            inventory[index].status = current === 'Aman' ? 'Hampir Habis' : current === 'Hampir Habis' ? 'Habis' : 'Aman';
-            saveToFirebase(); 
-        }
-
-        window.deleteItem = function(index) {
-            if (confirm(`Hapus ${inventory[index].name}?`)) {
-                inventory.splice(index, 1);
-                saveToFirebase(); 
+        window.deleteItem = function(idx) {
+            if (confirm(`Hapus "${inventory[idx].name}"?`)) {
+                inventory.splice(idx, 1);
+                saveToFirebase();
             }
-        }
+        };
 
         window.showRecap = function() {
             const habis = inventory.filter(i => i.status === 'Habis');
             const hampir = inventory.filter(i => i.status === 'Hampir Habis');
+            const aman = inventory.filter(i => i.status === 'Aman');
+
             let html = '';
 
-            html += `<div class="recap-section"><div class="recap-title" style="color: var(--danger)"><span>🔴 Habis (Urgent)</span><span>${habis.length} item</span></div>`;
-            html += habis.length > 0 ? `<ul class="recap-list">${habis.map(i => `<li><span>${i.name}</span></li>`).join('')}</ul>` : `<div class="empty-text">Aman, tidak ada yang habis.</div>`;
-            html += `</div><div class="recap-section"><div class="recap-title" style="color: var(--warning)"><span>⚠️ Hampir Habis</span><span>${hampir.length} item</span></div>`;
-            html += hampir.length > 0 ? `<ul class="recap-list">${hampir.map(i => `<li><span>${i.name}</span></li>`).join('')}</ul>` : `<div class="empty-text">Kosong.</div></div>`;
+            const makeSection = (title, badgeClass, badgeTxt, dotColor, items, emptyMsg) => {
+                let s = `<div class="recap-section">
+                    <div class="recap-header">
+                        <span class="recap-label">${title}</span>
+                        <span class="recap-badge ${badgeClass}">${items.length} ${badgeTxt}</span>
+                    </div>`;
+                if (items.length > 0) {
+                    items.forEach(i => {
+                        s += `<div class="recap-item"><span class="recap-item-dot" style="background:${dotColor}"></span>${i.name} <span style="font-size:11px;color:var(--muted);margin-left:auto">${i.category}</span></div>`;
+                    });
+                } else {
+                    s += `<div class="empty-note">${emptyMsg}</div>`;
+                }
+                return s + '</div>';
+            };
+
+            html += makeSection('🔴 Habis — Urgent', 'danger', 'item', '#c62828', habis, 'Tidak ada yang habis. Bagus!');
+            html += makeSection('⚠️ Hampir Habis', 'warn', 'item', '#e65100', hampir, 'Tidak ada yang hampir habis.');
+            html += makeSection('✅ Aman', 'safe', 'item', '#2e7d32', aman, '—');
 
             document.getElementById('recapBody').innerHTML = html;
-            document.getElementById('recapModal').style.display = 'flex';
-        }
+            document.getElementById('recapModal').classList.add('open');
+        };
 
-        window.closeRecap = function() { document.getElementById('recapModal').style.display = 'none'; }
-        
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('recapModal')) window.closeRecap();
-            if (event.target == document.getElementById('formModal')) window.closeFormModal();
-        }
+        window.handleOverlayClick = function(e, id) {
+            if (e.target === document.getElementById(id)) {
+                document.getElementById(id).classList.remove('open');
+            }
+        };
 
         window.sendReportToBoss = function() {
             const habis = inventory.filter(i => i.status === 'Habis');
             const hampir = inventory.filter(i => i.status === 'Hampir Habis');
-            if (habis.length === 0 && hampir.length === 0) { alert('Semua bahan baku masih aman.'); return; }
-
-            const dateObj = new Date(document.getElementById('globalReportDate').value);
-            const formattedDate = !isNaN(dateObj) ? dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : "";
-            
-            let text = `Halo, izin melaporkan update kondisi bahan baku Omaji.\n📅 *Tanggal Cek:* ${formattedDate}\n\n`;
-            if (habis.length > 0) { text += `🚨 *SUDAH HABIS:*\n` + habis.map(i => `- ${i.name}\n`).join('') + `\n`; }
-            if (hampir.length > 0) { text += `⚠️ *HAMPIR HABIS:*\n` + hampir.map(i => `- ${i.name}\n`).join('') + `\n`; }
+            if (habis.length === 0 && hampir.length === 0) {
+                alert('Semua bahan baku masih aman. Tidak ada yang perlu dilaporkan!');
+                return;
+            }
+            const dateVal = document.getElementById('globalReportDate').value;
+            const dateObj = new Date(dateVal);
+            const fmt = !isNaN(dateObj) ? dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+            let text = `Halo, izin melaporkan update kondisi bahan baku Omaji.\n📅 *Tanggal Cek:* ${fmt}\n\n`;
+            if (habis.length) text += `🚨 *SUDAH HABIS:*\n` + habis.map(i => `- ${i.name}`).join('\n') + '\n\n';
+            if (hampir.length) text += `⚠️ *HAMPIR HABIS:*\n` + hampir.map(i => `- ${i.name}`).join('\n') + '\n\n';
             text += `Mohon arahannya untuk proses belanja/restock. Terima kasih! 🙏`;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-        }
+        };
     </script>
 </body>
 </html>
