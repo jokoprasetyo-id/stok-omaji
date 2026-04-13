@@ -96,67 +96,61 @@
             50% { opacity: 0.4; transform: scale(0.7); }
         }
 
-        /* ── FILTER BAR ── */
-        .filter-bar {
+        /* ── CONTROLS BAR (filter + date sejajar) ── */
+        .controls-bar {
             background: var(--surface);
             border-bottom: 1px solid var(--border);
-            padding: 10px 16px;
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-        .filter-bar::-webkit-scrollbar { display: none; }
-
-        .filter-chip {
-            flex-shrink: 0;
-            padding: 6px 14px;
-            border-radius: 20px;
-            border: 1.5px solid var(--border);
-            background: transparent;
-            font-family: inherit;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--muted);
-            cursor: pointer;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-
-        .filter-chip.active {
-            background: var(--green-dark);
-            border-color: var(--green-dark);
-            color: #fff;
-        }
-
-        /* ── DATE ROW ── */
-        .date-row {
             padding: 10px 16px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .date-row label {
-            font-size: 12px; color: var(--muted); font-weight: 600; white-space: nowrap;
-        }
-
-        .date-row input[type="date"] {
+        .ctrl-select {
             flex: 1;
+            min-width: 0;
+            padding: 8px 32px 8px 10px;
             border: 1.5px solid var(--border);
             border-radius: var(--radius-sm);
-            background: var(--surface);
+            background-color: var(--surface2);
             font-family: inherit;
             font-size: 12px;
             font-weight: 600;
             color: var(--text);
-            padding: 8px 12px;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7f6b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .ctrl-select:focus { border-color: var(--green-mid); }
+
+        .ctrl-date {
+            flex: 1;
+            min-width: 0;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface2);
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text);
+            padding: 8px 10px;
             outline: none;
             transition: border-color 0.2s;
         }
 
-        .date-row input[type="date"]:focus {
-            border-color: var(--green-mid);
+        .ctrl-date:focus { border-color: var(--green-mid); }
+
+        .ctrl-divider {
+            width: 1px; height: 28px;
+            background: var(--border);
+            flex-shrink: 0;
         }
 
         /* ── STATS ROW ── */
@@ -173,7 +167,17 @@
             border-radius: var(--radius-sm);
             padding: 10px 12px;
             text-align: center;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            user-select: none;
+            -webkit-user-select: none;
         }
+
+        .stat-card:active { transform: scale(0.96); }
+
+        .stat-card.aman:hover { border-color: var(--safe-border); background: var(--safe-bg); }
+        .stat-card.warn:hover { border-color: var(--warn-border); background: var(--warn-bg); }
+        .stat-card.hbs:hover { border-color: var(--danger-border); background: var(--danger-bg); }
 
         .stat-num { font-size: 22px; font-weight: 700; line-height: 1; }
         .stat-lbl { font-size: 10px; font-weight: 600; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px; }
@@ -503,34 +507,32 @@
         </div>
     </header>
 
-    <!-- FILTER CHIPS -->
-    <div class="filter-bar" id="filterBar">
-        <button class="filter-chip active" data-cat="Semua" onclick="setFilter('Semua', this)">Semua</button>
-        <button class="filter-chip" data-cat="Bahan Makanan" onclick="setFilter('Bahan Makanan', this)">🍱 Makanan</button>
-        <button class="filter-chip" data-cat="Bahan Minuman" onclick="setFilter('Bahan Minuman', this)">🧃 Minuman</button>
-        <button class="filter-chip" data-cat="Snack" onclick="setFilter('Snack', this)">🍟 Snack</button>
-        <button class="filter-chip" data-cat="Buah-buahan" onclick="setFilter('Buah-buahan', this)">🍓 Buah</button>
-        <button class="filter-chip" data-cat="Bumbu/Saus" onclick="setFilter('Bumbu/Saus', this)">🧂 Bumbu</button>
-        <button class="filter-chip" data-cat="Lainnya" onclick="setFilter('Lainnya', this)">📦 Lainnya</button>
-    </div>
-
-    <!-- DATE ROW -->
-    <div class="date-row">
-        <label for="globalReportDate">📅 Tanggal Cek</label>
-        <input type="date" id="globalReportDate">
+    <!-- CONTROLS BAR: filter + date sejajar -->
+    <div class="controls-bar">
+        <select class="ctrl-select" id="categoryFilter" onchange="setFilter(this.value)">
+            <option value="Semua">🗂 Semua Kategori</option>
+            <option value="Bahan Makanan">🍱 Bahan Makanan</option>
+            <option value="Bahan Minuman">🧃 Bahan Minuman</option>
+            <option value="Snack">🍟 Snack</option>
+            <option value="Buah-buahan">🍓 Buah-buahan</option>
+            <option value="Bumbu/Saus">🧂 Bumbu & Saus</option>
+            <option value="Lainnya">📦 Lainnya</option>
+        </select>
+        <div class="ctrl-divider"></div>
+        <input type="date" class="ctrl-date" id="globalReportDate">
     </div>
 
     <!-- STATS -->
     <div class="stats-row" id="statsRow" style="display:none;">
-        <div class="stat-card aman">
+        <div class="stat-card aman" onclick="showStatDetail('Aman')">
             <div class="stat-num" id="statAman">0</div>
             <div class="stat-lbl">Aman</div>
         </div>
-        <div class="stat-card warn">
+        <div class="stat-card warn" onclick="showStatDetail('Hampir Habis')">
             <div class="stat-num" id="statWarn">0</div>
             <div class="stat-lbl">Hampir Habis</div>
         </div>
-        <div class="stat-card hbs">
+        <div class="stat-card hbs" onclick="showStatDetail('Habis')">
             <div class="stat-num" id="statHabis">0</div>
             <div class="stat-lbl">Habis</div>
         </div>
@@ -558,7 +560,7 @@
         </button>
         <button class="nav-btn wa" onclick="sendReportToBoss()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-            Kirim ke WA
+            Kirim ke Bos
         </button>
     </nav>
 
@@ -593,6 +595,15 @@
             <div class="sheet-handle"></div>
             <div class="sheet-title">📊 Rekap Stok</div>
             <div id="recapBody"></div>
+        </div>
+    </div>
+
+    <!-- STAT DETAIL MODAL -->
+    <div id="statDetailModal" class="modal-overlay" onclick="handleOverlayClick(event, 'statDetailModal')">
+        <div class="modal-sheet">
+            <div class="sheet-handle"></div>
+            <div class="sheet-title" id="statDetailTitle">Detail Stok</div>
+            <div id="statDetailBody"></div>
         </div>
     </div>
 
@@ -669,8 +680,9 @@
                 return currentFilter === 'Semua' || item.category === currentFilter;
             });
 
+            // Stats dihitung dari filtered (sesuai filter kategori aktif)
             let aman = 0, warn = 0, habis = 0;
-            inventory.forEach(i => {
+            filtered.forEach(i => {
                 if (i.status === 'Aman') aman++;
                 else if (i.status === 'Hampir Habis') warn++;
                 else habis++;
@@ -719,14 +731,20 @@
             });
         }
 
-        window.setFilter = function(cat, el) {
+        function haptic(type = 'light') {
+            if (!navigator.vibrate) return;
+            const patterns = { light: [10], medium: [20], heavy: [40], success: [10, 50, 10], error: [30, 20, 30] };
+            navigator.vibrate(patterns[type] || patterns.light);
+        }
+
+        window.setFilter = function(cat) {
+            haptic('light');
             currentFilter = cat;
-            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-            el.classList.add('active');
             renderInventory();
         };
 
         window.openAddModal = function() {
+            haptic('light');
             editIndex = -1;
             document.getElementById('itemName').value = '';
             document.getElementById('itemCategory').value = '';
@@ -736,6 +754,7 @@
         };
 
         window.editItem = function(idx) {
+            haptic('light');
             editIndex = idx;
             document.getElementById('itemName').value = inventory[idx].name;
             document.getElementById('itemCategory').value = inventory[idx].category;
@@ -747,13 +766,14 @@
         window.submitForm = function() {
             const name = document.getElementById('itemName').value.trim();
             const category = document.getElementById('itemCategory').value;
-            if (!name || !category) { alert('Lengkapi semua kolom ya!'); return; }
+            if (!name || !category) { haptic('error'); alert('Lengkapi semua kolom ya!'); return; }
             if (editIndex >= 0) {
                 inventory[editIndex].name = name;
                 inventory[editIndex].category = category;
             } else {
                 inventory.unshift({ name, category, status: 'Aman' });
             }
+            haptic('success');
             saveToFirebase();
             document.getElementById('formModal').classList.remove('open');
         };
@@ -761,17 +781,58 @@
         window.cycleStatus = function(idx) {
             const s = inventory[idx].status;
             inventory[idx].status = s === 'Aman' ? 'Hampir Habis' : s === 'Hampir Habis' ? 'Habis' : 'Aman';
+            const newStatus = inventory[idx].status;
+            if (newStatus === 'Habis') haptic('heavy');
+            else if (newStatus === 'Hampir Habis') haptic('medium');
+            else haptic('light');
             saveToFirebase();
         };
 
         window.deleteItem = function(idx) {
+            haptic('medium');
             if (confirm(`Hapus "${inventory[idx].name}"?`)) {
+                haptic('heavy');
                 inventory.splice(idx, 1);
                 saveToFirebase();
             }
         };
 
+        window.showStatDetail = function(statusFilter) {
+            haptic('light');
+            // Filter berdasarkan status DAN kategori aktif
+            const items = inventory.filter(i =>
+                i.status === statusFilter &&
+                (currentFilter === 'Semua' || i.category === currentFilter)
+            );
+            const catLabel = currentFilter === 'Semua' ? 'Semua Kategori' : currentFilter;
+            const cfg = {
+                'Aman':         { icon: '✅', bg: 'var(--safe-bg)',   dot: '#2e7d32' },
+                'Hampir Habis': { icon: '⚠️', bg: 'var(--warn-bg)',   dot: '#e65100' },
+                'Habis':        { icon: '🔴', bg: 'var(--danger-bg)', dot: '#c62828' },
+            }[statusFilter];
+
+            document.getElementById('statDetailTitle').innerHTML =
+                `${cfg.icon} ${statusFilter}
+                <span style="font-size:12px;font-weight:500;color:var(--muted);display:block;margin-top:2px">${catLabel} · ${items.length} bahan</span>`;
+
+            let html = '';
+            if (items.length === 0) {
+                html = `<div class="empty-state" style="padding:30px 0">Tidak ada bahan dengan status ini.</div>`;
+            } else {
+                items.forEach(i => {
+                    html += `<div class="recap-item" style="border-color:${cfg.bg}; background:${cfg.bg}">
+                        <span class="recap-item-dot" style="background:${cfg.dot}"></span>
+                        <span style="font-weight:600;flex:1">${i.name}</span>
+                        <span style="font-size:11px;color:var(--muted)">${i.category}</span>
+                    </div>`;
+                });
+            }
+            document.getElementById('statDetailBody').innerHTML = html;
+            document.getElementById('statDetailModal').classList.add('open');
+        };
+
         window.showRecap = function() {
+            haptic('light');
             const habis = inventory.filter(i => i.status === 'Habis');
             const hampir = inventory.filter(i => i.status === 'Hampir Habis');
             const aman = inventory.filter(i => i.status === 'Aman');
@@ -804,11 +865,13 @@
 
         window.handleOverlayClick = function(e, id) {
             if (e.target === document.getElementById(id)) {
+                haptic('light');
                 document.getElementById(id).classList.remove('open');
             }
         };
 
         window.sendReportToBoss = function() {
+            haptic('medium');
             const habis = inventory.filter(i => i.status === 'Habis');
             const hampir = inventory.filter(i => i.status === 'Hampir Habis');
             if (habis.length === 0 && hampir.length === 0) {
